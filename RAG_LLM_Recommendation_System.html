@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 基于RAG+LLM的个性化物品推荐系统 - 智能推荐新纪元</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.1);
+            overflow: hidden;
+            animation: containerFloat 6s ease-in-out infinite;
+        }
+        
+        @keyframes containerFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 50%, #45B7D1 100%);
+            background-size: 200% 200%;
+            animation: headerGradient 8s ease infinite;
+            color: white;
+            text-align: center;
+            padding: 50px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+            pointer-events: none;
+        }
+        
+        @keyframes headerGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .header h1 {
+            font-size: 3em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            animation: titlePulse 3s ease-in-out infinite;
+            letter-spacing: -1px;
+        }
+        
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        .header p {
+            font-size: 1.3em;
+            opacity: 0.95;
+            font-weight: 300;
+            letter-spacing: 2px;
+            animation: subtitleFade 4s ease-in-out infinite;
+        }
+        
+        @keyframes subtitleFade {
+            0%, 100% { opacity: 0.95; }
+            50% { opacity: 0.8; }
+        }
+        
+        .flow-container {
+            padding: 40px;
+            background: #f8f9fa;
+        }
+        
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .step-number {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-right: 20px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .step-content {
+            flex: 1;
+            background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.2);
+            overflow: hidden;
+        }
+        
+        /* 第1、2模块 - 蓝色系 */
+        .step-content.group-1 {
+            background: linear-gradient(145deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid rgba(33, 150, 243, 0.3);
+        }
+        
+        .step-content.group-1:hover {
+            border-color: rgba(33, 150, 243, 0.6);
+            box-shadow: 0 15px 40px rgba(33, 150, 243, 0.3);
+        }
+        
+        /* 第3、4、5模块 - 绿色系 */
+        .step-content.group-2 {
+            background: linear-gradient(145deg, #e8f5e8 0%, #c8e6c9 100%);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .step-content.group-2:hover {
+            border-color: rgba(76, 175, 80, 0.6);
+            box-shadow: 0 15px 40px rgba(76, 175, 80, 0.3);
+        }
+        
+        /* 第6、7模块 - 紫色系 */
+        .step-content.group-3 {
+            background: linear-gradient(145deg, #f3e5f5 0%, #e1bee7 100%);
+            border: 1px solid rgba(156, 39, 176, 0.3);
+        }
+        
+        .step-content.group-3:hover {
+            border-color: rgba(156, 39, 176, 0.6);
+            box-shadow: 0 15px 40px rgba(156, 39, 176, 0.3);
+        }
+        
+        .step-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
+        }
+        
+        .step-content:hover::before {
+            left: 100%;
+        }
+        
+        .step-content:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        
+        .step-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            letter-spacing: -0.5px;
+        }
+        
+        .step-icon {
+            font-size: 1.8em;
+            margin-right: 12px;
+            animation: iconBounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes iconBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .step-summary {
+            color: #555;
+            line-height: 1.7;
+            font-size: 1.05em;
+            font-weight: 400;
+        }
+        
+
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: 20px;
+            width: 85%;
+            max-width: 900px;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            line-height: 1.8;
+        }
+        
+        .modal-content h2 {
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+            text-align: center;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+        }
+        
+        .modal-content h3 {
+            color: #34495e;
+            margin: 25px 0 15px 0;
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .modal-content p {
+            color: #555;
+            margin-bottom: 20px;
+            line-height: 2;
+            font-size: 1.05em;
+        }
+        
+        .modal-content strong {
+             color: #2c3e50;
+             font-weight: 600;
+         }
+         
+         .modal-list {
+             list-style: none;
+             padding: 0;
+             margin: 0 0 20px 0;
+         }
+         
+         .modal-list li {
+             background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+             margin: 8px 0;
+             padding: 15px 20px;
+             border-radius: 12px;
+             border-left: 4px solid #667eea;
+             transition: all 0.3s ease;
+             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+         }
+         
+         .modal-list li:hover {
+             transform: translateX(5px);
+             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+             border-left-color: #764ba2;
+         }
+         
+         .modal-steps {
+             list-style: none;
+             padding: 0;
+             margin: 0 0 20px 0;
+             counter-reset: step-counter;
+         }
+         
+         .modal-steps li {
+             background: linear-gradient(135deg, #fff5f5, #fef5e7);
+             margin: 12px 0;
+             padding: 18px 25px;
+             border-radius: 15px;
+             border-left: 5px solid #ff6b6b;
+             position: relative;
+             transition: all 0.3s ease;
+             box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+             counter-increment: step-counter;
+         }
+         
+         .modal-steps li:before {
+             content: counter(step-counter);
+             position: absolute;
+             left: -15px;
+             top: 50%;
+             transform: translateY(-50%);
+             background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+             color: white;
+             width: 30px;
+             height: 30px;
+             border-radius: 50%;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             font-weight: bold;
+             font-size: 0.9em;
+             box-shadow: 0 2px 8px rgba(255,107,107,0.3);
+         }
+         
+         .modal-steps li:hover {
+             transform: translateX(8px);
+             box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+             border-left-color: #ff5252;
+         }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            right: 20px;
+            top: 15px;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #ffffff;
+            padding: 18px 22px;
+            border-radius: 12px;
+            font-family: 'Inter', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            font-size: 0.88em;
+            font-weight: 400;
+            line-height: 1.7;
+            letter-spacing: 0.3px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+            pointer-events: none;
+            max-width: 420px;
+            min-width: 320px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            transform: translateY(8px) scale(0.96);
+            will-change: opacity, transform;
+        }
+        
+        .tooltip.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+        
+        .tooltip::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 24px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 6px solid #1a1a2e;
+            filter: drop-shadow(0 -2px 2px rgba(0,0,0,0.1));
+        }
+        
+        .tooltip strong {
+            color: #64b5f6;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .tooltip .param-line {
+            display: block;
+            margin-bottom: 6px;
+            padding-left: 12px;
+            position: relative;
+        }
+        
+        .tooltip .param-line::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #64b5f6;
+            font-size: 0.9em;
+        }
+        
+        .tooltip .param-line:last-child {
+            margin-bottom: 0;
+        }
+        
+        .tech-highlights {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 40px;
+            margin-top: 30px;
+        }
+        
+        .tech-highlights h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        
+        .highlights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .highlight-item {
+            background: rgba(255,255,255,0.15);
+            padding: 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .highlight-item:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        .highlight-item h3 {
+            margin-bottom: 12px;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        
+        .highlight-item p {
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+        
+        .optimization-section {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 50px 40px;
+            text-align: center;
+        }
+        
+        .optimization-section h2 {
+            color: #2c3e50;
+            margin-bottom: 40px;
+            font-size: 2.2em;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .optimization-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .optimization-card {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.05);
+            text-align: left;
+        }
+        
+        .optimization-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            border-color: rgba(102, 126, 234, 0.2);
+        }
+        
+        .optimization-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            display: block;
+        }
+        
+        .optimization-card h3 {
+            color: #2c3e50;
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .optimization-card p {
+            color: #666;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 基于RAG+LLM的个性化物品推荐系统</h1>
+            <p>✨ 智能推荐新纪元 • 🎯 多模态深度融合 • ⚡ 端到端极速处理 • 🧠 AI驱动未来 ✨</p>
+        </div>
+        
+        <div class="flow-container">
+            <div class="flow-step">
+                <div class="step-number">1</div>
+                <div class="step-content group-1" onclick="openModal('modal1')">
+                    <div class="step-title">
+                        <span class="step-icon">🔄</span>
+                        商品数据预处理与多模态融合
+                    </div>
+                    <div class="step-summary">
+                        🎨 像艺术家一样理解商品！通过MultimodalFusion.py巧妙融合文本描述与视觉图像，让AI拥有"慧眼识珠"的能力，深度挖掘商品的每一个细节特征
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="flow-step">
+                <div class="step-number">2</div>
+                <div class="step-content group-1" onclick="openModal('modal2')">
+                    <div class="step-title">
+                        <span class="step-icon">🗄️</span>
+                        向量化存储与知识库构建
+                    </div>
+                    <div class="step-summary">
+                        🧠 构建智能大脑的记忆宫殿！VectorProcessor.py将商品特征转化为高维向量，在ChromaDB中编织出一张智能知识网络，让相似商品在向量空间中"心有灵犀"
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="step-number">3</div>
+                <div class="step-content group-2" onclick="openModal('modal3')">
+                    <div class="step-title">
+                        <span class="step-icon">👤</span>
+                        用户交互数据处理与特征提取
+                    </div>
+                    <div class="step-summary">
+                        👥 解码用户心声的密语！UserInteractionBatchGenerator.py如同心理学家般细致分析每一次点击、浏览、购买，从海量行为数据中洞察用户的真实偏好
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="step-number">4</div>
+                <div class="step-content group-2" onclick="openModal('modal4')">
+                    <div class="step-title">
+                        <span class="step-icon">🏷️</span>
+                        商品特征关键词提取
+                    </div>
+                    <div class="step-summary">
+                        🔍 商品DNA解析师！ProductFeatureBatchGenerator.py运用先进的NLP技术，从商品描述中精准提取核心特征基因，为每件商品打造独特的"身份标签"
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="step-number">5</div>
+                <div class="step-content group-2" onclick="openModal('modal5')">
+                    <div class="step-title">
+                        <span class="step-icon">🎯</span>
+                        BAP用户画像生成系统
+                    </div>
+                    <div class="step-summary">
+                        🎭 用户画像大师！UserProfileGenerator.py运用BAP算法深度学习用户行为模式，为每位用户量身定制专属画像，让推荐变得"懂你所想，知你所需"
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="step-number">6</div>
+                <div class="step-content group-3" onclick="openModal('modal6')">
+                    <div class="step-title">
+                        <span class="step-icon">🔍</span>
+                        智能召回系统
+                    </div>
+                    <div class="step-summary">
+                        🎯 智能红娘系统！在高维向量空间中精准匹配用户画像与商品特征，运用先进的相似度算法，为用户发现那些"命中注定"的心仪商品
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flow-step">
+                <div class="step-number">7</div>
+                <div class="step-content group-3" onclick="openModal('modal7')">
+                    <div class="step-title">
+                        <span class="step-icon">📊</span>
+                        推荐效果评估与Recall计算
+                    </div>
+                    <div class="step-summary">
+                        📈 推荐效果透视镜！calculate_recall.py如同精密仪器般测量推荐系统的每一个脉搏，通过Recall@20等核心指标全方位评估推荐质量
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tech-highlights">
+            <h2>🌟 技术亮点</h2>
+            <div class="highlights-grid">
+                <div class="highlight-item">
+                    <h3>🔄 多模态融合魔法</h3>
+                    <p>🎨 如同调色师般巧妙融合文本与图像，让AI拥有"火眼金睛"，洞察商品的每一个细节，推荐准确性飙升至新高度！</p>
+                </div>
+                <div class="highlight-item">
+                    <h3>⚡ 闪电般并发处理</h3>
+                    <p>🚀 批量处理如疾风骤雨，千万级数据秒级响应，让等待成为历史，效率提升百倍不是梦！</p>
+                </div>
+                <div class="highlight-item">
+                    <h3>🎯 千人千面推荐</h3>
+                    <p>🎭 为每位用户量身定制专属推荐，如贴心管家般精准把握喜好，让"懂你"不再是口号而是现实！</p>
+                </div>
+                <div class="highlight-item">
+                    <h3>🗄️ 智能向量宇宙</h3>
+                    <p>🌌 构建高维向量空间，让相似商品在数学宇宙中"心有灵犀"，检索速度快如闪电！</p>
+                </div>
+                <div class="highlight-item">
+                    <h3>🤖 LLM超级大脑</h3>
+                    <p>🧠 融合最前沿的大语言模型，赋予系统类人理解能力，让AI真正"读懂"用户和商品！</p>
+                </div>
+                <div class="highlight-item">
+                    <h3>📊 全方位效果雷达</h3>
+                    <p>📈 360度无死角评估推荐效果，如精密仪器般监控每一个指标，持续优化永不停歇！</p>
+                </div>
+                <div class="highlight-item">
+                    <h3>🔧 积木式架构</h3>
+                    <p>🏗️ 模块化设计如乐高积木，随心组合扩展，维护升级轻松愉快，可扩展性无限！</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="optimization-section">
+            <h2>🚀 未来优化蓝图</h2>
+            <div class="optimization-grid">
+                <div class="optimization-card">
+                    <div class="optimization-icon">🔍</div>
+                    <h3>RAG检索策略优化</h3>
+                    <p>优化相似度计算算法和召回率指标，提升检索精度和效率，实现更准确的商品匹配</p>
+                </div>
+                <div class="optimization-card">
+                    <div class="optimization-icon">📊</div>
+                    <h3>商品、用户层级信息优化</h3>
+                    <p>深化商品和用户特征层级结构，增强多维度信息融合，提升个性化推荐质量</p>
+                </div>
+                <div class="optimization-card">
+                    <div class="optimization-icon">🚀</div>
+                    <h3>使用更好的策略</h3>
+                    <p>从元数据获取更丰富信息，引入重排序算法和多策略融合，全面提升推荐效果</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 模态框 -->
+    <div id="modal1" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('modal1')">&times;</span>
+            <h2>🔄 商品数据预处理与多模态融合</h2>
+            <h3>📁 数据源宝库</h3>
+            <ul class="modal-list">
+                <li>🗂️ <strong>商品元数据</strong>(meta.csv/meta.json) - 商品的"身份证"</li>
+                <li>🖼️ <strong>商品图像数据</strong> - 商品的"颜值担当"</li>
+                <li>⚙️ <strong>FusionProductBatchGenerator.py</strong> - 批处理的"智能工厂"</li>
+            </ul>
+            <h3>🔧 核心技术引擎</h3>
+            <ul class="modal-list">
+                <li>🤖 <strong>豆包API多模态处理</strong> - AI的"超级大脑"</li>
+                <li>🎨 <strong>文本与图像特征融合</strong> - 数据的"炼金术"</li>
+                <li>⚡ <strong>批量数据处理优化</strong> - 效率的"加速器"</li>
+            </ul>
+            <h3>📄 核心实现文件</h3>
+            <ul class="modal-list">
+                <li>🧠 <strong>MultimodalFusion.py</strong> - 融合逻辑的"指挥官"</li>
+                <li>🏭 <strong>FusionProductBatchGenerator.py</strong> - 批处理的"生产线"</li>
+            </ul>
+            <h3>🔄 魔法般的处理流程</h3>
+            <ol class="modal-steps">
+                <li>📖 <strong>数据读取</strong> - 像图书管理员般精确读取商品元数据和图像路径</li>
+                <li>🤖 <strong>AI分析</strong> - 调用豆包API进行深度多模态智能分析</li>
+                <li>💎 <strong>特征提取</strong> - 如珠宝鉴定师般提取商品核心特征和关键词</li>
+                <li>🎭 <strong>描述生成</strong> - 创造性地生成融合后的商品描述</li>
+                <li>📊 <strong>数据输出</strong> - 输出结构化的高质量商品特征数据</li>
+            </ol>
+            <h3>💡 未来优化之路</h3>
+            <p>🔍 <strong>有效商品提取优化</strong>：加入有效商品提取的代码，过滤掉没有被用户交互过的商品，确保只处理真正有价值的商品数据，避免资源浪费。</p>
+        </div>
+    </div>
+    
+    <div id="modal2" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('modal2')">&times;</span>
+            <h2>🗄️ 向量化存储与知识库构建</h2>
+            <h3>📁 数据源矿藏</h3>
+            <ul class="modal-list">
+                <li>🎨 <strong>多模态融合后的商品特征</strong> - 经过"炼金术"处理的精华</li>
+                <li>📝 <strong>商品描述文本</strong> - 商品的"自我介绍"</li>
+                <li>🏷️ <strong>商品关键词标签</strong> - 商品的"DNA标记"</li>
+            </ul>
+            <h3>🔧 技术魔法阵</h3>
+            <ul class="modal-list">
+                <li>🧬 <strong>文本向量化(Embedding)</strong> - 将文字转化为数学语言的"翻译官"</li>
+                <li>🗄️ <strong>ChromaDB向量数据库</strong> - 高维空间的"记忆宫殿"</li>
+                <li>🔍 <strong>相似度检索算法</strong> - 寻找"灵魂伴侣"的"红娘系统"</li>
+            </ul>
+            <h3>📄 核心代码战士</h3>
+            <ul class="modal-list">
+                <li>⚙️ <strong>VectorProcessor.py</strong> - 向量处理的"总指挥"</li>
+                <li>🏛️ <strong>chroma_db/</strong> - 向量数据的"图书馆"</li>
+            </ul>
+            <h3>🔄 神奇的转换之旅</h3>
+            <ol class="modal-steps">
+                <li>📥 <strong>数据加载</strong> - 如搬运工般精心加载融合后的商品特征数据</li>
+                <li>🧠 <strong>向量生成</strong> - 使用Embedding模型将文本转化为高维向量</li>
+                <li>🏗️ <strong>数据库存储</strong> - 将向量安全存储到ChromaDB的"保险库"</li>
+                <li>📇 <strong>索引构建</strong> - 建立闪电般快速的检索索引系统</li>
+                <li>🎯 <strong>智能召回</strong> - 支持毫秒级的相似度查询和精准召回</li>
+            </ol>
+        </div>
+    </div>
+    
+    <div id="modal3" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('modal3')">&times;</span>
+            <h2>👤 用户交互数据处理与特征提取</h2>
+            <h3>📁 用户行为宝藏</h3>
+            <ul class="modal-list">
+                <li>📚 <strong>用户交互历史数据</strong> - 用户的"数字足迹"</li>
+                <li>💬 <strong>用户评论和评分</strong> - 用户的"真心话"</li>
+                <li>🎬 <strong>用户行为序列</strong> - 用户的"行为电影"</li>
+            </ul>
+            <h3>🔧 数据炼金术</h3>
+            <ul class="modal-list">
+                <li>⚡ <strong>批量数据处理</strong> - 如流水线般高效的"数据工厂"</li>
+                <li>🧹 <strong>文本预处理和清洗</strong> - 数据的"美容师"</li>
+                <li>🔧 <strong>管道符分隔数据解析</strong> - 数据的"解密专家"</li>
+            </ul>
+            <h3>📄 代码英雄联盟</h3>
+            <ul class="modal-list">
+                <li>🏭 <strong>UserInteractionBatchGenerator.py</strong> - 批处理的"总工程师"</li>
+                <li>📂 <strong>data/user-interaction-batch/</strong> - 处理结果的"展示厅"</li>
+            </ul>
+            <h3>🔄 用户心声解码之旅</h3>
+            <ol class="modal-steps">
+                <li>📊 <strong>数据读取</strong> - 如考古学家般仔细读取用户交互CSV数据</li>
+                <li>🔍 <strong>内容解析</strong> - 巧妙解析管道符分隔的复杂内容结构</li>
+                <li>🎯 <strong>格式转换</strong> - 将原始数据格式化为AI可理解的批处理请求</li>
+                <li>📝 <strong>文件生成</strong> - 生成标准JSONL格式的批处理文件</li>
+                <li>🚀 <strong>AI分析</strong> - 提交到AI服务进行深度特征提取和分析</li>
+            </ol>
+        </div>
+    </div>
+    
+    <div id="modal4" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('modal4')">&times;</span>
+            <h2>🏷️ 商品特征关键词提取</h2>
+            <h3>📁 商品特征宝库</h3>
+            <ul class="modal-list">
+                <li>🛒 <strong>用户购买历史数据</strong> - 用户选择的"心路历程"</li>
+                <li>📝 <strong>商品描述和属性</strong> - 商品的"自我介绍"</li>
+                <li>💰 <strong>价格和类别信息</strong> - 商品的"身份标签"</li>
+            </ul>
+            <h3>🔧 特征挖掘实验室</h3>
+            <ul class="modal-list">
+                <li>🧠 <strong>LLM关键词提取</strong> - AI的"慧眼识珠"能力</li>
+                <li>⚡ <strong>批量处理优化</strong> - 效率的"加速引擎"</li>
+                <li>✂️ <strong>文本截断和格式化</strong> - 数据的"美容师"</li>
+            </ul>
+            <h3>📄 特征工程师团队</h3>
+            <ul class="modal-list">
+                <li>🏭 <strong>ProductFeatureBatchGenerator.py</strong> - 特征提取的"总工程师"</li>
+                <li>📂 <strong>data/product-feature-batch/</strong> - 批处理结果的"展示厅"</li>
+            </ul>
+            <h3>🔄 商品DNA解析之旅</h3>
+            <ol class="modal-steps">
+                <li>📖 <strong>数据读取</strong> - 如档案管理员般精心读取用户购买历史数据</li>
+                <li>🔍 <strong>信息提取</strong> - 巧妙提取商品的核心描述和属性信息</li>
+                <li>💎 <strong>内容格式化</strong> - 精心格式化价格和描述内容</li>
+                <li>🎯 <strong>请求生成</strong> - 生成标准化的特征提取批处理请求</li>
+                <li>🏷️ <strong>关键词输出</strong> - 输出商品的核心特征关键词"基因密码"</li>
+            </ol>
+        </div>
+    </div>
+    
+    <div id="modal5" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('modal5')">&times;</span>
+            <h2>🎯 BAP用户画像生成系统</h2>
+            <h3>📁 用户心理档案库</h3>
+            <ul class="modal-list">
+                <li>📋 <strong>用户指令和特征数据</strong> - 用户的"心声表达"</li>
+                <li>⚖️ <strong>正负样本数据</strong> - 喜好与厌恶的"天平"</li>
+                <li>📚 <strong>用户交互历史</strong> - 行为轨迹的"时光相册"</li>
+            </ul>
+            <h3>🔧 心理分析实验室</h3>
+            <ul class="modal-list">
+                <li>🧬 <strong>BAP(Behavioral Analysis Pipeline)算法</strong> - 行为分析的"DNA解码器"</li>
+                <li>🔄 <strong>多步骤工作流</strong> - 精密的"心理分析流水线"</li>
+                <li>🎨 <strong>个性化特征生成</strong> - 量身定制的"画像艺术家"</li>
+            </ul>
+            <h3>📄 画像艺术家工作室</h3>
+            <ul class="modal-list">
+                <li>🎭 <strong>UserProfileGenerator.py</strong> - 用户画像的"心理学家"</li>
+                <li>📊 <strong>data/UserProfiles.csv</strong> - 用户画像的"艺术作品集"</li>
+            </ul>
+            <h3>🔄 用户心理画像创作之旅</h3>
+            <ol class="modal-steps">
+                <li>🔍 <strong>数据解析</strong> - 如心理咨询师般细致解析用户指令和特征数据</li>
+                <li>⚖️ <strong>样本处理</strong> - 巧妙处理正负样本的交叉排列组合</li>
+                <li>🎨 <strong>画像生成</strong> - 运用BAP算法生成独一无二的个性化用户画像</li>
+                <li>💎 <strong>偏好提取</strong> - 精准提取用户的深层偏好特征密码</li>
+                <li>📋 <strong>档案输出</strong> - 输出结构化的用户"数字分身"档案</li>
+            </ol>
+        </div>
+    </div>
+    
+    <div id="modal6" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('modal6')">&times;</span>
+            <h2>🔍 智能召回系统</h2>
+            <h3>📁 智能数据宝库</h3>
+            <ul class="modal-list">
+                <li>🎭 <strong>用户画像数据</strong> - 用户的"数字分身"</li>
+                <li>🗄️ <strong>商品向量数据库</strong> - 商品的"记忆宫殿"</li>
+                <li>⚡ <strong>实时查询请求</strong> - 用户需求的"即时信号"</li>
+            </ul>
+            <h3>🔧 AI魔法工坊</h3>
+            <ul class="modal-list">
+                <li>🧮 <strong>向量相似度计算</strong> - 数学的"红娘算法"</li>
+                <li>🎯 <strong>个性化排序算法</strong> - 量身定制的"排序大师"</li>
+                <li>⚡ <strong>实时推荐生成</strong> - 闪电般的"推荐工厂"</li>
+            </ul>
+            <h3>📄 核心代码精英</h3>
+            <ul class="modal-list">
+                <li>🔍 <strong>query_products.py</strong> - 商品查询的"搜索专家"</li>
+                <li>🎪 <strong>RecommendationBatchGenerator.py</strong> - 推荐生成的"魔法师"</li>
+            </ul>
+            <h3>🔄 智能召回魔法流程</h3>
+            <ol class="modal-steps">
+                <li>📡 <strong>需求接收</strong> - 如敏锐的"接线员"接收用户查询请求</li>
+                <li>🎭 <strong>画像匹配</strong> - 基于用户画像在商品海洋中精准"钓鱼"</li>
+                <li>💕 <strong>缘分计算</strong> - 运用数学魔法计算商品与用户的"心动指数"</li>
+                <li>🎨 <strong>列表创作</strong> - 如艺术家般精心编排个性化推荐列表</li>
+                <li>🏆 <strong>完美呈现</strong> - 返回经过精心排序的"命中注定"推荐结果</li>
+            </ol>
+            <h3>💡 未来优化之路</h3>
+            <p>🔍 <strong>相似度检索算法升级</strong>：相似度检索算法可以更换一下，寻找更高准确率的检索方法，如引入更先进的向量相似度计算方法或深度学习模型。</p>
+            <p>🎯 <strong>正样本屏蔽优化</strong>：在粗筛的50个样本中，屏蔽掉正样本（正样本需要重新构建，因为交互表格中的正样本最多是10个），确保推荐结果的多样性和新颖性。</p>
+        </div>
+    </div>
+    
+    <div id="modal7" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('modal7')">&times;</span>
+            <h2>📊 推荐效果评估与Recall计算</h2>
+            <h3>📁 评估数据宝藏</h3>
+            <ul class="modal-list">
+                <li>📊 <strong>推荐结果数据</strong> - 系统表现的"成绩单"</li>
+                <li>👥 <strong>用户真实行为数据</strong> - 用户真心的"投票箱"</li>
+                <li>🎯 <strong>目标商品列表</strong> - 成功的"标准答案"</li>
+            </ul>
+            <h3>🔧 评估科学实验室</h3>
+            <ul class="modal-list">
+                <li>📐 <strong>Recall@K指标计算</strong> - 精确的"数学尺子"</li>
+                <li>🔬 <strong>推荐效果评估</strong> - 严谨的"科学家"</li>
+                <li>📈 <strong>统计分析和报告</strong> - 数据的"翻译官"</li>
+            </ul>
+            <h3>📄 分析专家团队</h3>
+            <ul class="modal-list">
+                <li>🧮 <strong>calculate_recall.py</strong> - 召回率计算的"数学大师"</li>
+                <li>📋 <strong>data/Target.csv</strong> - 目标数据的"参考答案"</li>
+            </ul>
+            <h3>🔄 科学评估探索之旅</h3>
+            <ol class="modal-steps">
+                <li>📥 <strong>数据装载</strong> - 如搬运工般精心加载推荐结果和目标数据</li>
+                <li>🔍 <strong>信息提取</strong> - 巧妙提取推荐商品ASIN的"身份密码"</li>
+                <li>📊 <strong>指标计算</strong> - 运用数学魔法计算Recall@20等关键指标</li>
+                <li>📝 <strong>报告生成</strong> - 如新闻记者般生成详尽的评估报告和统计摘要</li>
+                <li>💾 <strong>智能存档</strong> - 将珍贵的评估结果安全保存供未来深度分析</li>
+            </ol>
+            <h3>💡 未来优化之路</h3>
+            <p>🎯 <strong>目标集重构优化</strong>：目标集（Target.csv）需要重新构建，因为原来的并不是真正的最后一个正样本，需要确保评估基准的准确性和可靠性。</p>
+        </div>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+    
+    <script>
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+        
+        // 悬停提示功能
+        const optimizationCards = document.querySelectorAll('.optimization-card');
+        const tooltip = document.getElementById('tooltip');
+        
+        const optimizationTips = {
+            0: '<strong>🔍 RAG检索策略优化</strong><span class="param-line"><strong>▸ 相似度算法:</strong> 余弦相似度、欧几里得距离、曼哈顿距离多算法融合</span><span class="param-line"><strong>▸ 召回率指标:</strong> Recall@10/20/50多层级评估体系</span><span class="param-line"><strong>▸ 检索精度:</strong> 精确匹配+模糊匹配双重保障</span><span class="param-line"><strong>▸ 向量优化:</strong> 4096维→8192维高精度向量空间</span><span class="param-line"><strong>▸ 查询扩展:</strong> 同义词扩展、语义增强、上下文理解</span>',
+            1: '<strong>📊 商品、用户层级信息优化</strong><span class="param-line"><strong>▸ 商品层级:</strong> 类目→子类→品牌→型号四级分层结构</span><span class="param-line"><strong>▸ 用户层级:</strong> 基础画像→行为偏好→深度兴趣→个性标签</span><span class="param-line"><strong>▸ 特征融合:</strong> 静态特征+动态行为+时序模式</span><span class="param-line"><strong>▸ 权重分配:</strong> 自适应权重学习、多维度特征加权</span><span class="param-line"><strong>▸ 冷启动:</strong> 基于内容的冷启动策略优化</span>',
+            2: '<strong>🚀 使用更好的策略</strong><span class="param-line"><strong>▸ 元数据挖掘:</strong> 商品属性、用户标签、交互时序深度挖掘</span><span class="param-line"><strong>▸ 重排序算法:</strong> Learning to Rank、多目标优化排序</span><span class="param-line"><strong>▸ 多策略融合:</strong> 协同过滤+内容推荐+深度学习混合</span><span class="param-line"><strong>▸ 实时优化:</strong> 在线学习、增量更新、A/B测试</span><span class="param-line"><strong>▸ 效果评估:</strong> 多维度指标体系、用户满意度反馈</span>'
+        };
+        
+        optimizationCards.forEach((content, index) => {
+            content.addEventListener('mouseenter', (e) => {
+                clearTimeout(tooltipTimeout);
+                tooltip.innerHTML = optimizationTips[index];
+                tooltip.style.left = '0px';
+                tooltip.style.top = '0px';
+                updateTooltipPosition(e);
+                tooltipTimeout = setTimeout(() => {
+                    tooltip.classList.add('show');
+                }, 50);
+            });
+            
+            content.addEventListener('mouseleave', () => {
+                clearTimeout(tooltipTimeout);
+                tooltip.classList.remove('show');
+            });
+            
+            content.addEventListener('mousemove', (e) => {
+                if (tooltip.classList.contains('show')) {
+                    updateTooltipPosition(e);
+                }
+            });
+        });
+        
+        let tooltipTimeout;
+        
+        function updateTooltipPosition(e) {
+            requestAnimationFrame(() => {
+                const rect = tooltip.getBoundingClientRect();
+                const vw = window.innerWidth;
+                const vh = window.innerHeight;
+                
+                let left = e.pageX + 15;
+                let top = e.pageY - 60;
+                
+                // 边界检测优化
+                if (left + rect.width > vw - 10) {
+                    left = e.pageX - rect.width - 15;
+                }
+                if (top < 10) {
+                    top = e.pageY + 20;
+                }
+                if (top + rect.height > vh - 10) {
+                    top = e.pageY - rect.height - 20;
+                }
+                
+                tooltip.style.transform = `translate(${left}px, ${top}px)`;
+            });
+        }
+    </script>
+</body>
+</html>
